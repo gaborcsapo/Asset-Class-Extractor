@@ -42,6 +42,15 @@ responsive service and to tailor our offerings to best advisory mandates
 
 #Chart or pairing Rowe Price NO
 
-#stupid chart Allianz
+
+#stupid chart Allianz won't work
 
 #Northern Trust good chart but doesn't work, no pairing
+
+#chart could work NEEDS AREA TWEEKING J.P morgran
+
+#EncryptionError Goldman Sachs
+
+#chart could work needs area tweeking Invesco pairing could work
+
+#encryptionError DeutscheBank

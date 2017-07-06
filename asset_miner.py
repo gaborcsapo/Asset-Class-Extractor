@@ -15,54 +15,56 @@ re_words = "(?:(?:million|thousand|hundred|billion|M|B|T|K|m|bn|tn)(?![a-z]))"
 
 re_headings = '(?:Fund mix|Assets|Group investments|Investment allocation|Fund management|Investment management|assets|sset class|aum)'
 re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash management|money markets?|bonds?|stocks?)'
-re_money = currency+'?\s?'+digits+'\s?'+words+'?\s?'+currency+'?(?![%\d])'
-re_percent = digits+'%'
+re_money = re_currency+'?\s?'+re_digits+'\s?'+re_words+'?\s?'+re_currency+'?(?![%\d])'
+re_percent = re_digits+'%'
 
 def main():
 	files = [f for f in listdir('./docs') if isfile(join('./docs', f))]
 	for file in files:
-		doc_search(file)
+		a = Document(file)
 
 class Document():
 	def __init__(self, file):
-		self.title = check_title(file)
-		self.OFFSET = int(file[0:2])
 		self.path = "./docs/" + file
+		self.title = None
+		self.OFFSET = 0
 		self.pdf_reader = PdfFileReader(open(self.path, "rb"))
 		self.page_dict = {}
 		
 	
-	def extract():
-		load_doc()
-		page_filter()
-		table_extract(self.OFFSET)
-		text_extract()
-		clean_up()
+	def extract(self):
+		self.check_title(self.path)
+		self.load_doc()
+		self.page_filter()
+		self.table_extract(self.OFFSET)
+		self.text_extract()
+		self.clean_up()
 
-	def check_title(file):
+	def check_title(self, file):
 		#checking if name meets standards for later printing use, and 
 		pattern = re.compile("^\d{2,3}\. [\S\s]+? \([A-Za-z ]+\) \d{4} ?Q?[1-4]?")
-		match = pattern.match(file)
+		match = pattern.match(file[7:])
 		if (match):
 		    title = match.string
 		    print(title)
 		else:
 			print(file, " doesn't meet naming conventions")
-		return title
+		self.title = title
+		self.OFFSET = int(file[7:9])
 
-	def load_doc():
+	def load_doc(self):
 		try:
 			self.pdf_reader.decrypt('')
 		except:
 			pass
-		pages = self.pdf_reader.getNumPages()
+		pages = 3 #self.pdf_reader.getNumPages()
 		
 		# I load the pages into the document object.
 		for page in range(pages):
 		    print("p",page, " is loading")
 		    self.page_dict[self.OFFSET+page] = ''
 		    #converting to text using python2 script, which output to ./temp
-		    cmd = ["python2", "./pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(self.OFFSET+page)+".txt", "-p", str(self.OFFSET+page),"-t", "text", path]
+		    cmd = ["python2", "./pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(self.OFFSET+page)+".txt", "-p", str(self.OFFSET+page),"-t", "text", self.path]
 		    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 		    temp, error = p.communicate()
 		    if error:
@@ -74,7 +76,7 @@ class Document():
 		    page_output.close()
 		print("Document loaded")
 
-	def page_filter():
+	def page_filter(self):
 		# Once loaded, the document has to go through a basic page scoring step. If the page doesn't contain Asset/Investment allocation or the two words equity and fixed income, then the page is thrown away.
 		page_nomination = []
 		cases = "(?:"+re_headings+"|"+re_classes+")[\s\S]*""(?:"+re_headings+"|"+re_classes+")"
@@ -83,11 +85,10 @@ class Document():
 		    matches = p.findall(self.page_dict[page])
 		    if matches:
 		        page_nomination.append(page)
-		    print(matches)
 		#taking subset of original document object
 		self.page_dict = {k: self.page_dict[k] for k in page_nomination}
 
-	def table_extract(pages_to_extract = self.page_dict):
+	def table_extract(self, pages_to_extract):
 		# To analyze the pages, first I'll try to convert it to a table and then I'll validate the first table column entries (equity, fixed income, and optionally multi asset and alternatives) I'll also try to look for columns indicating years.
 		results = []
 		try:
@@ -108,12 +109,12 @@ class Document():
 
 		k = re.compile(re_classes, re.IGNORECASE)
 		j = re.compile(re_currency, re.IGNORECASE)
-		df = pd.DataFrame([], columns=['equities', 'equities %', 'fixed income', 'fixed income %', 'alternative', 'alternative %', 'multi-asset','multi-asset %', 'cash management', 'cash management %'], index=[title])
+		df = pd.DataFrame([], columns=['equities', 'equities %', 'fixed income', 'fixed income %', 'alternative', 'alternative %', 'multi-asset','multi-asset %', 'cash management', 'cash management %'], index=[self.title])
 
 		for page in pages_to_extract:
 		    for  area in areas:
 		        try:
-		            table = tabula.read_pdf(path, pages=page, area = area)
+		            table = tabula.read_pdf(self.path, pages=page, area = area)
 		            p = table.T.reset_index().T
 		            p = p.apply(lambda x: x.astype(str).str.lower())
 		            for row_ind, row in p.iterrows():
@@ -145,7 +146,7 @@ class Document():
 
 
 
-	def text_extract():
+	def text_extract(self):
 		tokenizer = nltk.tokenize.RegexpTokenizer(r''+re_percent+'|'+re_classes+'|'+re_money)
 		regexp_tagger = nltk.tag.RegexpTagger(
 		    [(r''+re_classes, 'CL'),
@@ -194,7 +195,7 @@ class Document():
 		    elif i[1] == 'CL':
 		        cl += 1
 
-		df = pd.DataFrame([], columns=['equities', 'equities %', 'fixed income', 'fixed income %', 'alternative', 'alternative %', 'multi-asset','multi-asset %', 'cash management', 'cash management %'], index=[title])
+		df = pd.DataFrame([], columns=['equities', 'equities %', 'fixed income', 'fixed income %', 'alternative', 'alternative %', 'multi-asset','multi-asset %', 'cash management', 'cash management %'], index=[self.title])
 
 		per = num = cla = None
 		if (pc == cl == nu):
@@ -258,7 +259,7 @@ class Document():
 		            num = cla = None
 		print(df.T)         
 
-	def clean_up:
+	def clean_up():
 		files = [f for f in listdir('./temp') if isfile(join('./temp', f))]
 		for file in files:
 			DeleteFile(file)

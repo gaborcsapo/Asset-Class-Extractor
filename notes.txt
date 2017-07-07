@@ -1,28 +1,3 @@
-if file encrypted like Deutsche Bank's case. Preview apps can still view but code cannot access details or change the doc.
-
-
-import os
-import PyPDF2
-from PyPDF2 import PdfFileWriter, PdfFileReader
-filename=raw_input('\nFilename:')
-
-fp = open(filename)
-pdfFile = PdfFileReader(fp)
-if pdfFile.isEncrypted:
-    try:
-        pdfFile.decrypt('')
-        print 'File Decrypted (PyPDF2)'
-    except:
-        command="cp "+filename+" temp.pdf; qpdf --password='' --decrypt temp.pdf "+filename
-        os.system(command)
-        print 'File Decrypted (qpdf)'
-        #re-open the decrypted file
-        fp = open(filename)
-        pdfFile = PdfFileReader(fp)
-else:
-    print 'File Not Encrypted'
-#dostuff with pdfFile here
-
 #sentence
 Clients invest across the full product range, as evidenced by the year-end mix of 45% in equities, 28% in fixed income, 4% in multi-asset class, 3% in alternatives, 13% in cash management and 7% in advisory mandates. 
 

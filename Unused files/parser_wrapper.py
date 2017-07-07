@@ -29,13 +29,11 @@ def main(argv):
         matches.pop(i)
     
     print matches
-    #parsing nominated sentences is kinda useless
+    #parsing nominated sentences
     # parser = Parser()
     # for i in range(len(matches)):
     #     tree = parser.parse(matches[i])
     #     tree.pretty_print()
-
-    
     
 
 if __name__ == '__main__': sys.exit(main(sys.argv))

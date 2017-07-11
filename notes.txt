@@ -29,3 +29,13 @@ responsive service and to tailor our offerings to best advisory mandates
 #chart could work needs area tweeking Invesco pairing could work
 
 #encryptionError DeutscheBank
+
+
+in € bn
+in billions
+in millions
+($ In Billions)
+($ billions)
+(dollar amounts in billions)
+(in billions)
+sometimes they have different charts with different units...

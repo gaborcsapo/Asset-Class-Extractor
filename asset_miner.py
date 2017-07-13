@@ -127,7 +127,7 @@ def check_title(doc, file):
 		print(file, " doesn't meet naming conventions", file=LOG_FILE)
 		doc.title = 'UNKOWN'
 		doc.date = 'UNKOWN'
-	doc.OFFSET = int(file[7:9])
+	#doc.OFFSET = int(file[7:9])
 
 def load_doc_dummy(doc):
 	print("####LOADING PDF####", file=LOG_FILE)

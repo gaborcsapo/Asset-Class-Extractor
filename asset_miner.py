@@ -102,7 +102,7 @@ def extract(doc_name):
 		if (len(candidates) > 0):	
 			best = evaluate(candidates)
 			if (best.count() < 7):
-				candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
+				pass#candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 		if (len(candidates) == 0):
 			print('#####No candidates found in', doc.title, file=LOG_FILE)
 			LOG_FILE.close()

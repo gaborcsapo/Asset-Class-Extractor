@@ -1,3 +1,17 @@
+args = ["java"] + java_options + ["-jar", JAR_PATH] + options + [path] + ['2>./temp/java_log.txt']
+    
+
+
+
+
+
+
+
+
+
+
+
+
 #sentence
 Clients invest across the full product range, as evidenced by the year-end mix of 45% in equities, 28% in fixed income, 4% in multi-asset class, 3% in alternatives, 13% in cash management and 7% in advisory mandates. 
 

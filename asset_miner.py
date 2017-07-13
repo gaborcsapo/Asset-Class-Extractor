@@ -2,26 +2,35 @@ import subprocess
 import re
 import tabula
 import nltk
-from os import getcwd, listdir, getpid, remove
+from os import getcwd, listdir, getpid, remove, devnull
 from os.path import isfile, join
 import pandas as pd
 from PyPDF2 import PdfFileReader
 import csv
 from multiprocessing import Pool 
 from tqdm import tqdm
+import time
+import sys
 
 #regexs to distinguish dollar values, asset classes and percent values
-re_digits = "\d+(?:[ ,\.-]?\d+){0,3}"
+re_digits = "[1-9]\d*(?:[ ,\.-]?\d+){0,3}"
 re_currency = "(?:USD|US dollars?|dollars?|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6])"
 re_words = "(?:(?:million|thousand|hundred|billion|M|B|T|K|m|bn|tn)(?![a-z]))"
 
 re_context = '(?:mix|management|assets|investment|managed|invested)?'
 re_headings = '(?:Fund mix|Assets|Group investments|Investment allocation|Fund management|Investment management|assets|sset class|aum)'
 re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash management|money markets?|bonds?|stocks?)'
+loose_search = '(?:(equities|equity|stocks?)|(fixed income|bonds?)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash management|money markets?))'
+strict_search = '(?:(equities|equity)|(fixed income)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash management))'
 re_money = re_currency+'?\s?'+re_digits+'\s?'+re_words+'?\s?'+re_currency+'?(?![%\d])'
 re_percent = re_digits+'%'
 
-HEADER = ['name', 'date', 'equity', 'equity%', 'fixed income', 'fixed income%', 'alternative', 'alternative%', 'multi-asset','multi-asset%', 'money market', 'money market%', 'file']
+re_million = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}millions?'+re_currency+'?\)|in '+re_currency+'? ?millions? ?'+re_currency+'?)'
+re_billion = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}billions?'+re_currency+'?\)|in '+re_currency+'? ?billions? ?'+re_currency+'?)'
+re_trillion = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}trillions?'+re_currency+'?\)|in '+re_currency+'? ?trillions? ?'+re_currency+'?)'
+
+HEADER = ['name', 'date', 'file', 'equity', 'equity%', 'fixed income', 'fixed income%', 'alternative', 'alternative%', 'multi-asset','multi-asset%', 'money market', 'money market%']
+
 
 class Document:
 	def __init__(self, file):
@@ -29,19 +38,23 @@ class Document:
 		self.title = None
 		self.date = None
 		self.OFFSET = 0
-		self.pdf_reader = PdfFileReader(open(self.path, "rb"))
+		self.pdf_reader = PdfFileReader(open(self.path, "rb"), strict=False, warndest=None)
 		self.page_dict = {}
 
 def main():
 	files_pdf = [f for f in listdir('./docs') if (isfile(join('./docs', f)) and f.endswith('.pdf'))]
 	clean_up('.log')
+	clean_up('.csv')
+	clean_up('.txt')
 
+	#multi processing. Breking the list of files and feeeding them to a bunch of processes
 	pool = Pool()
-	for _ in tqdm(pool.imap_unordered(extract, files_pdf), total=len(files_pdf)):
+	for _ in tqdm(pool.imap_unordered(extract, files_pdf), total=len(files_pdf), file=sys.stdout):
 		pass
 	pool.close() 
 	pool.join()
 	
+	#getting the result of the subprocesses and writing them in one file
 	candidates_out = open('candidates.csv', 'w')
 	writer = csv.writer(candidates_out, dialect='excel')
 	writer.writerow(HEADER)
@@ -61,6 +74,7 @@ def main():
 	results_out.close()
 	candidates_out.close()
 	clean_up('.csv')
+	clean_up('.txt')
 
 def extract(doc_name):
 	doc = Document(doc_name)
@@ -71,25 +85,31 @@ def extract(doc_name):
 	output = open('./temp/candidates'+str(getpid())+'.csv', 'w')
 	output.close()
 
-	global log_file
-	log_file = open('./temp/logging_pid:'+str(getpid())+'.log', 'a')
+	global LOG_FILE
+	global TIMER
+	TIMER = time.time()
+	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a')
 	
 	check_title(doc, doc.path)
-	load_doc_dummy(doc)
+	load_doc(doc)
+	#load_doc_dummy(doc)
 	page_filter(doc)
 	
 	candidates = []
-	candidates += table_extract(doc, [doc.OFFSET]) #table_extract(doc, doc.page_dict) #
+	candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 	candidates += text_extract(doc)
 	if (len(candidates) == 0):
-		print('No candidates found in', doc.title, file=log_file)
+		print('#####No candidates found in', doc.title, file=LOG_FILE)
+		LOG_FILE.close()
 		return
 	best = evaluate(candidates)
 	
+	adjust_unit(doc, best)
 	write_csv([best], True)
 	write_csv(candidates, False)
-	clean_up('.txt')
-	log_file.close()
+	print('###Extract done### ', time.time()-TIMER, file=LOG_FILE)
+	LOG_FILE.close()
+	
 
 def check_title(doc, file):
 	#checking if name meets standards for later printing use, and 
@@ -100,16 +120,15 @@ def check_title(doc, file):
 	if (bool(title_search) and bool(date_search)):
 	    doc.title = title_search.group(0)
 	    doc.date = date_search.group(0)
-	    print("####", doc.title, doc.date, "####", file=log_file)
+	    print("####", doc.title, doc.date, "####", file=LOG_FILE)
 	else:
-		print(file, " doesn't meet naming conventions", file=log_file)
+		print(file, " doesn't meet naming conventions", file=LOG_FILE)
 		doc.title = 'UNKOWN'
 		doc.date = 'UNKOWN'
 	doc.OFFSET = int(file[7:9])
 
 def load_doc_dummy(doc):
-	print("####LOADING PDF####", file=log_file)
-	
+	print("####LOADING PDF####", file=LOG_FILE)
 	try:
 		doc.pdf_reader.decrypt('')
 	except:
@@ -125,7 +144,7 @@ def load_doc_dummy(doc):
 	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	    temp, error = p.communicate()
 	    if error:
-	        print(error.decode("utf-8"), file=log_file)
+	        print(error.decode("utf-8"), file=LOG_FILE)
 	    
 	    #reading in files to get text from ./temp   
 	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r") as page_output:
@@ -133,10 +152,10 @@ def load_doc_dummy(doc):
 	            doc.page_dict[doc.OFFSET+page] += line.strip() + ' '
 	    page_output.close()
 
-	print("Document loaded", file=log_file)
+	print("Document loaded ", time.time()-TIMER, file=LOG_FILE)
 
 def load_doc(doc):
-	print("####LOADING PDF####", file=log_file)
+	print("####CONVERTING PDF TO TEXT####", file=LOG_FILE)
 	
 	try:
 		doc.pdf_reader.decrypt('')
@@ -146,40 +165,47 @@ def load_doc(doc):
 	
 	# I load the pages into the document object.
 	for page in range(pages):
-	    print("p",page, " is loading", file=log_file)
+	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''
 	    
 	    #converting to text using python2 script, which output to ./temp
-	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(page)+".txt", "-p", str(page),"-t", "text", doc.path]
+	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "-p", str(page),"-t", "text", doc.path]
 	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 	    temp, error = p.communicate()
 	    if error:
-	        print(error.decode("utf-8"), file=log_file)
+	        print(error.decode("utf-8"))#, file=LOG_FILE)
 	    
 	    #reading in files to get text from ./temp   
-	    with open("./temp/output"+str(page)+".txt", "r") as page_output:
+	    with open("./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "r") as page_output:
 	        for line in page_output:
 	            doc.page_dict[page] += line.strip() + ' '
 	    page_output.close()
 
-	print("Document loaded", file=log_file)
+	print("Document loaded", time.time()-TIMER, file=LOG_FILE)
 
 # Once loaded, the document has to go through a basic page scoring step. If the page doesn't contain Asset/Investment allocation or the two words equity and fixed income, then the page is thrown away.
 def page_filter(doc):
 	page_nomination = []
-	cases = "(?:"+re_headings+"|"+re_classes+")[\s\S]*""(?:"+re_headings+"|"+re_classes+")"
-	p = re.compile(cases, re.IGNORECASE)
+	
+	digit_search = re.compile(re_digits, re.IGNORECASE)
+	class_search = re.compile(r'', re.IGNORECASE)
+	context_search = re.compile(re_headings+'|'+re_context, re.IGNORECASE)
+
 	for page in doc.page_dict:
-	    matches = p.findall(doc.page_dict[page])
-	    if matches:
+	    digit_match = 3 < len(digit_search.findall(doc.page_dict[page]))
+	    class_match = 2 < len(class_search.findall(doc.page_dict[page]))
+	    eq_search = bool(re.search(r'equity|equities',doc.page_dict[page], re.IGNORECASE))
+	    fx_search = bool(re.search(r'fixed income',doc.page_dict[page], re.IGNORECASE))
+	    context_match = bool(context_search.search(doc.page_dict[page]))
+	    if (digit_match and class_match and context_match and eq_search and fx_search):
 	        page_nomination.append(page)
 	#taking subset of original document object
 	doc.page_dict = {k: doc.page_dict[k] for k in page_nomination}
-	print("Pages to look through:", len(doc.page_dict), file=log_file)
+	print("Pages to look through:", len(doc.page_dict), time.time()-TIMER, file=LOG_FILE)
 
 # To analyze the pages, first I'll try to convert it to a table and then I'll validate the first table column entries (equity, fixed income, and optionally multi asset and alternatives) I'll also try to look for columns indicating years.
 def table_extract(doc, pages_to_extract):
-	print("####TABLE EXTRACTION####", file=log_file)
+	print("####TABLE EXTRACTION####", file=LOG_FILE)
 	results = []
 	try:
 	    page = doc.pdf_reader.getPage(0)
@@ -193,8 +219,9 @@ def table_extract(doc, pages_to_extract):
 	right = page.mediaBox.getUpperRight_x()
 	bottom = page.mediaBox.getLowerLeft_y()
 	left = page.mediaBox.getLowerLeft_x()
-	areas = [[top, left, bottom, right],
+	areas = [
 	         [top, left, (bottom+top)/2, right],[(bottom+top)/2, left, bottom, right],
+	         [top, left, bottom, right],
 	         [top, left, (bottom+top)/2, (right+left)/2],[top, (right+left)/2, (bottom+top)/2, right],
 	         [(bottom+top)/2, (right+left)/2, bottom, right],[(bottom+top)/2, left, bottom, (right+left)/2]
 	        ]
@@ -204,10 +231,13 @@ def table_extract(doc, pages_to_extract):
 	l = re.compile(re_percent, re.IGNORECASE)
 	
 	for page in pages_to_extract:
-	    for area in areas:
+	    for idx, area in enumerate(areas):
 	        series = pd.Series(index=HEADER)
 	        series['name'] = doc.title
 	        series['date'] = doc.date
+	        #if first two didn't yield anything, give up
+	        if (idx == 2 and len(results) == 0):
+	        	break
 	        try:
 	            table = tabula.read_pdf(doc.path, pages=page, area = area, silent=True)
 	            p = table.T.reset_index().T
@@ -240,21 +270,23 @@ def table_extract(doc, pages_to_extract):
 	                        if bool(l.search(col)):
 	                            into_series(series, asset, l.search(col).group(0), '%')
 	                            break
-	                        
-	            if (series.count() > 3):
-	                series['file'] = getcwd()+doc.path+'#page='+str(page)
+	            
+	            #if than 4 values in the series, it is result. I use 4 because 1 is name and 1 is date, so actually it's more than 2           
+	            if (series.count() > 4):
+	                series['file'] = getcwd()+doc.path[1:]+'#page='+str(page)
 	                results.append(series)
-	                print("Results += 1 on p", page, file=log_file)
-	                if (series.count() > 5):
+	                print("Results += 1 on p", page, file=LOG_FILE)
+	                #I use 6 here because in the meantime file loc was addaed too
+	                if (series.count() > 6):
 	                    break            
 	        except Exception as inst:
-	            print("Unsuccessful table search: page", page, inst, file=log_file)
-	    
+	            print("Unsuccessful table search: page", page, inst, file=LOG_FILE)
+	    print('P',page,' took ', time.time()-TIMER, file=LOG_FILE)
 	return results
 
 # If no tables are found, we continue trying to text mine the expected results. This Python2 script looks for conversational sentences.	
 def text_extract(doc):
-	print("####TEXT EXTRACTION####", file=log_file)
+	print("####TEXT EXTRACTION####", time.time()-TIMER, file=LOG_FILE)
 	
 	tokenizer = nltk.tokenize.RegexpTokenizer(r''+re_percent+'|'+re_classes+'|'+re_money)
 	regexp_tagger = nltk.tag.RegexpTagger(
@@ -360,43 +392,53 @@ def text_extract(doc):
 	            series['name'] = doc.title
 	            series['date'] = doc.date
 	            results.append(series)
-	            print("Results +=1 on p", page, file=log_file)
+	            print("Results +=1 on p", page, file=LOG_FILE)
 	            if (series.count() > 5):
 	            	break                      
-	
+	print('Done with text. ', time.time()-TIMER, file=LOG_FILE)
 	return results
 
-def get_unit(doc, page, value):
-	number = 1
-	#looking through the value
-	if (bool(re.search(r"trillion|\stn", value, re.IGNORECASE))):
-		number *= 1000000000000
-	elif (bool(re.search(r"billion|\sbn", value, re.IGNORECASE))):
-		number *= 1000000000
-	elif (bool(re.search(r"million", value, re.IGNORECASE))):
-		number *= 1000000
-	#looking through the pages
-	# elif (bool(re.search(r"", doc[page], re.IGNORECASE))):
-	# 	number *= 1000000000000
-	# elif (bool(re.search(r"", doc[page], re.IGNORECASE))):
-	# 	number *= 1000000000
-	# elif (bool(re.search(r"", doc[page], re.IGNORECASE))):
-	# 	number *= 1000000
-	#last resort is guessing based on the size of the number
-	elif (1000 > float(re.sub(r"\D", "", value)) > 1):
-		number *= 1000000000
-	elif (1000 < float(re.sub(r"\D", "", value))):
-		number *= 1000000
-
-	result = float(re.sub(r"\D", "", value))*number
-	#currency check
-	currency = (re.search(r"[¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]", value, re.IGNORECASE))
-	if (True):
-		pass #if there are more foreign than dollar
-	if (bool(currency)):
-		result = currency + str(number)
-
-	return result
+def adjust_unit(doc, best):
+	match = re.search('page=(\d+)', best['file'])
+	page = int(match.group(1)) if match else 0
+	
+	for ind, value in best[['equity','fixed income','alternative','multi-asset','money market']].iteritems():
+		number = 1
+		if isinstance(value, str):
+			#looking through the pages
+			unit_search = [re.findall(re_trillion, doc.page_dict[page], re.IGNORECASE),
+							re.findall(re_billion, doc.page_dict[page], re.IGNORECASE),
+							re.findall(re_million, doc.page_dict[page], re.IGNORECASE)]
+			most_freq_unit = max(enumerate(unit_search), key = lambda tup: len(tup[1]))
+			#looking through the value
+			if (bool(re.search(r"trillion|\stn", value, re.IGNORECASE))):
+				number *= 1000000000000
+			elif (bool(re.search(r"billion|\sbn", value, re.IGNORECASE))):
+				number *= 1000000000
+			elif (bool(re.search(r"million", value, re.IGNORECASE))):
+				number *= 1000000
+			#looking through the document
+			elif(most_freq_unit == 0):
+				number *= 1000000000000
+			elif(most_freq_unit == 1):
+				number *= 1000000000
+			elif(most_freq_unit == 2):
+				number *= 1000000
+			#last resort is guessing based on the size of the number
+			elif (1000 > float(re.sub(r"[^\d.,]", "", value)) > 1):
+				number *= 1000000000
+			elif (1000 < float(re.sub(r"[^\d.,]", "", value))):
+				number *= 1000000
+			
+			result = float(re.search(re_digits, value).group(0))*number
+			
+			#currency check
+			foreign = re.findall(r"(?:euro )|(?:eur )|(?:gbp)|(?:pounds)|[¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]", doc.page_dict[page], re.IGNORECASE)
+			usd = re.findall(r"USD|US dollars?|dollars?|\$", doc.page_dict[page], re.IGNORECASE)
+			if (len(foreign) <= len(usd)):
+				best.loc[ind] = result
+			else:
+				best.loc[ind] = max(set(foreign), key=foreign.count) + str(result)
 
 
 #managing putting items into pandas sereis
@@ -413,11 +455,17 @@ def into_series(series, type, value, percent = ''):
 		series['money market'+percent] = value
 
 def evaluate(candidates):
-	best = candidates[0]
+	best = [candidates[0]]
 	for i in candidates:
-		if (i.count() > best.count()):
-			best = i
-	return best
+		if (i.count() > best[0].count()):
+			best = [i]
+		elif(i.count() == best[0].count()):
+			best.append(i)
+	if (len(best) > 1):
+		#if more with same amount of numbers, let's use the one with the largest numbesr...
+		return best[pd.concat(best, axis=1).loc['equity':].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values().index[0]] 
+	else:
+		return best[0]
 
 def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a')

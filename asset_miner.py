@@ -77,41 +77,45 @@ def main():
 	clean_up('.txt')
 
 def extract(doc_name):
-	doc = Document(doc_name)
+	print('start')
+	try:
+		doc = Document(doc_name)
 
-	#cleaning output files
-	output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
-	output.close()
-	output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
-	output.close()
+		#cleaning output files
+		output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
+		output.close()
+		output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
+		output.close()
 
-	global LOG_FILE
-	global TIMER
-	TIMER = time.time()
-	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
-	
-	check_title(doc, doc.path)
-	load_doc(doc)
-	#load_doc_dummy(doc)
-	page_filter(doc)
-	
-	candidates = []
-	candidates += text_extract(doc)
-	if (len(candidates) > 0):	
+		global LOG_FILE
+		global TIMER
+		TIMER = time.time()
+		LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
+		
+		check_title(doc, doc.path)
+		load_doc(doc)
+		#load_doc_dummy(doc)
+		page_filter(doc)
+		
+		candidates = []
+		candidates += text_extract(doc)
+		if (len(candidates) > 0):	
+			best = evaluate(candidates)
+			if (best.count() < 7):
+				candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
+		if (len(candidates) == 0):
+			print('#####No candidates found in', doc.title, file=LOG_FILE)
+			LOG_FILE.close()
+			return
 		best = evaluate(candidates)
-		if (best.count() < 7):
-			candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
-	if (len(candidates) == 0):
-		print('#####No candidates found in', doc.title, file=LOG_FILE)
+		
+		adjust_unit(doc, best)
+		write_csv([best], True)
+		write_csv(candidates, False)
+		print('###Extract done### ', time.time()-TIMER, file=LOG_FILE)
 		LOG_FILE.close()
-		return
-	best = evaluate(candidates)
-	
-	adjust_unit(doc, best)
-	write_csv([best], True)
-	write_csv(candidates, False)
-	print('###Extract done### ', time.time()-TIMER, file=LOG_FILE)
-	LOG_FILE.close()
+	except Exception as inst:
+		print('something', inst)
 	
 
 def check_title(doc, file):

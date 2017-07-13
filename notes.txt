@@ -3,6 +3,7 @@ You need to have:
 java8
 python3
 python2
+pdfminer for python2!!
 C compiler (gcc)
 Anaconda
 nltk

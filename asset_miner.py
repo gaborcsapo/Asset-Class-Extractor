@@ -38,7 +38,7 @@ class Document:
 		self.title = None
 		self.date = None
 		self.OFFSET = 0
-		self.pdf_reader = PdfFileReader(open(self.path, "rb"), strict=False, warndest=None)
+		self.pdf_reader = PdfFileReader(open(self.path, "rb"), strict=False)
 		self.page_dict = {}
 
 def main():
@@ -161,8 +161,12 @@ def load_doc(doc):
 	
 	try:
 		doc.pdf_reader.decrypt('')
-	except:
-		pass
+	except Exception as inst:
+		print(inst)
+		exit(1)
+
+
+
 	pages = doc.pdf_reader.getNumPages()
 	
 	# I load the pages into the document object.

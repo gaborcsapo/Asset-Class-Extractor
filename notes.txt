@@ -1,5 +1,20 @@
-args = ["java"] + java_options + ["-jar", JAR_PATH] + options + [path] + ['2>./temp/java_log.txt']
-    
+Install
+You need to have:
+java8
+python3
+python2
+C compiler (gcc)
+Anaconda
+nltk
+tabula-py (go to ./Libraries/tabula-py and run "sudo python3 setup.py install")
+pdf2txt (similarly to above)
+PyPDF2 (similarly)
+tqdm (similarly)
+
+Notes:	
+On some linux distributions numpy doesn't work properly. If you encounter an issue related to numpy when installing tabula-py, edit setup.py and move numpy from install-required to setup-required.
+
+
 
 
 

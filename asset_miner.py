@@ -55,19 +55,19 @@ def main():
 	pool.join()
 	
 	#getting the result of the subprocesses and writing them in one file
-	candidates_out = open('candidates.csv', 'w')
+	candidates_out = open('candidates.csv', 'w', encoding='utf-8')
 	writer = csv.writer(candidates_out, dialect='excel')
 	writer.writerow(HEADER)
 	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith('candidates'))]:
-		with open('./temp/'+file, 'r') as f:
+		with open('./temp/'+file, 'r', encoding='utf-8') as f:
 			for line in f:
 				candidates_out.write(line)
 	
-	results_out = open('results.csv', 'w')
+	results_out = open('results.csv', 'w', encoding='utf-8')
 	writer = csv.writer(results_out, dialect='excel')
 	writer.writerow(HEADER)
 	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith('results'))]:
-		with open('./temp/'+file, 'r') as f:
+		with open('./temp/'+file, 'r', encoding='utf-8') as f:
 			for line in f:
 				results_out.write(line)
 
@@ -80,15 +80,15 @@ def extract(doc_name):
 	doc = Document(doc_name)
 
 	#cleaning output files
-	output = open('./temp/results'+str(getpid())+'.csv', 'w')
+	output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
 	output.close()
-	output = open('./temp/candidates'+str(getpid())+'.csv', 'w')
+	output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
 	output.close()
 
 	global LOG_FILE
 	global TIMER
 	TIMER = time.time()
-	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a')
+	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
 	
 	check_title(doc, doc.path)
 	load_doc(doc)
@@ -149,7 +149,7 @@ def load_doc_dummy(doc):
 	        print(error.decode("utf-8"), file=LOG_FILE)
 	    
 	    #reading in files to get text from ./temp   
-	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r") as page_output:
+	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r", encoding='utf-8') as page_output:
 	        for line in page_output:
 	            doc.page_dict[doc.OFFSET+page] += line.strip() + ' '
 	    page_output.close()
@@ -182,7 +182,7 @@ def load_doc(doc):
 	        print(error.decode("utf-8"))#, file=LOG_FILE)
 	    
 	    #reading in files to get text from ./temp   
-	    with open("./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "r") as page_output:
+	    with open("./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "r", encoding='utf-8') as page_output:
 	        for line in page_output:
 	            doc.page_dict[page] += line.strip() + ' '
 	    page_output.close()
@@ -474,7 +474,7 @@ def evaluate(candidates):
 		return best[0]
 
 def write_csv(series, best):
-	output = open('./temp/results'+str(getpid())+'.csv', 'a') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a')
+	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
 	writer = csv.writer(output, dialect='excel')
 	for i in series:
 		writer.writerow(i.tolist())

@@ -106,7 +106,7 @@ def extract(doc_name):
 	if (len(candidates) > 0):	
 		best = evaluate(candidates)
 		if (best.count() < 7):
-			pass#candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
+			candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 	if (len(candidates) == 0):
 		print('#####No candidates found in', doc.title, file=LOG_FILE)
 		LOG_FILE.close()
@@ -122,7 +122,7 @@ def extract(doc_name):
 
 def check_title(doc, file):
 	#checking if name meets standards for later printing use, and 
-	title = re.compile("\d{2,3}\. [\S\s]+? \([A-Za-z ]+\)")
+	title = re.compile("\d{1,3}\. [\S\s]+? \([A-Za-z ]+\)")
 	date = re.compile("\d{4} ?Q?[1-4]?")
 	title_search = title.search(file[7:])
 	date_search = date.search(file[7:])

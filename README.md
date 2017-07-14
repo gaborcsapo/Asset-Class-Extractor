@@ -12,7 +12,7 @@ pdf2txt (go to ./Libraries/pdf2txt and run "sudo python2 setup.py install" NOTE:
 PyPDF2 (go to ./Libraries/PyPDF2 and run "sudo python3 setup.py install")
 tqdm (go to ./Libraries/tqdm and run "sudo python3 setup.py install")
 
-Once everything is installed, you can run the program using "python3 asset_miner.py".
+Once everything is installed, you can run the program using "python3 asset_miner.py 2> /dev/null". "2> /dev/null" surpresses all warnings including the ones that can from tabula. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the Warnings.
 It extracts pdfs placed into the ./docs folder.
 results.csv in the main folder containes the final output. The candidates.csv contains possible results that have been discarded in the process.
 If you go to ./temp, you can read the logging files for each child process after they are run. It contains useful information for debugging.

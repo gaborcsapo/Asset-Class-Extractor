@@ -143,7 +143,7 @@ def load_doc(doc):
 	
 	# I load the pages into the document object.
 	for page in range(pages):
-		print("p",page, " is converting")
+	    print("p",page, " is converting")
 	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''
 	    
@@ -207,7 +207,7 @@ def table_extract(doc, pages_to_extract):
 	l = re.compile(re_percent, re.IGNORECASE)
 	
 	for page in pages_to_extract:
-		print(page, 'processing tables')
+	    print(page, 'processing tables')
 	    for idx, area in enumerate(areas):
 	        series = pd.Series(index=HEADER)
 	        series['name'] = doc.title

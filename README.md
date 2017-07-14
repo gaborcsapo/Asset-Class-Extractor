@@ -5,9 +5,9 @@ Asset managers invest their assets in a range of products (equities, fixed incom
 ## Getting Started
 
 ### Installing
-'''
+```
 git clone https://github.com/gaborcsapo/Asset-Class-Extractor.git
-'''
+```
 Once prerequisites are installed, it's ready to go.
 
 ### Prerequisites
@@ -27,9 +27,9 @@ Once prerequisites are installed, it's ready to go.
 ## Running the program
 
 Once everything is installed, you can run the program using:
-'''
+```
 python3 asset_miner.py 2> /dev/null
-'''
+```
 "2> /dev/null" surpresses all warnings including the ones that can from tabula. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the Warnings.
 
 It extracts pdfs placed into the ./docs folder.

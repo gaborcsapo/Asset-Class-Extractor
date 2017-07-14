@@ -1,6 +1,17 @@
-# Installation:
+# Asset Allocation Extractor
 
-You need to have:
+Asset managers invest their assets in a range of products (equities, fixed income, money markets...). They sometimes report how much of their assets they invest in each class in unstructured annual and quaterly report pdfs. The task was to try to create a script that extracts the allocation values from these pdf reports and puts them into a spreadsheet for later statistical analysis. Several data mining companies were contacted but they did not have a clear solution to the problem. For experimental purposes I was given the task to attempt to come up with a prototype system.
+
+## Getting Started
+
+### Installing
+'''
+git clone https://github.com/gaborcsapo/Asset-Class-Extractor.git
+'''
+Once prerequisites are installed, it's ready to go.
+
+### Prerequisites
+
 - java8
 - python3
 - python2
@@ -12,7 +23,14 @@ You need to have:
 - PyPDF2 (go to ./Libraries/PyPDF2 and run "sudo python3 setup.py install")
 - tqdm (go to ./Libraries/tqdm and run "sudo python3 setup.py install")
 
-Once everything is installed, you can run the program using "python3 asset_miner.py 2> /dev/null". "2> /dev/null" surpresses all warnings including the ones that can from tabula. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the Warnings.
+
+## Running the program
+
+Once everything is installed, you can run the program using:
+'''
+python3 asset_miner.py 2> /dev/null
+'''
+"2> /dev/null" surpresses all warnings including the ones that can from tabula. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the Warnings.
 
 It extracts pdfs placed into the ./docs folder.
 
@@ -20,10 +38,9 @@ results.csv in the main folder containes the final output. The candidates.csv co
 
 If you go to ./temp, you can read the logging files for each child process after they are run. It contains useful information for debugging.
 
-# The problem:
-Asset managers invest their assets in a range of products (equities, fixed income, money markets...). They sometimes report how much of their assets they invest in each class in unstructured annual and quaterly report pdfs. The task was to try to create a script that extracts the allocation values from these pdf reports and puts it into a spreadsheet for later statistical analysis. Several data mining companies were contacted but they did not have a clear solution to the problem. For experimental purposes I was given the task to attempt to come up with a prototype system.
+## How it works
 
-# How it works:
+### Overview
 - takes a pdf and using the library pdf2txt converts each page to text
 - filters useless pages by throwing them away simply if they don't contain digits and asset class names
 - looks for full sentences and using heuristics tries to guess if they contain information about asset allocation. If it finds a good enough result, skips the next step.
@@ -32,17 +49,54 @@ Asset managers invest their assets in a range of products (equities, fixed incom
 - converts it to numbers (i.e. 1 billion -> 10000000000)
 - repeats the same for every pdf in ./docs and combines the results in a single file
 
-## Challenges and my response:
+### Challenges and my response
  - Text extraction from PDFs is a notoriously difficult task admitted by many scholars. Table extraction is, however, on another level of complexity because of the unstructured nature of pdfs.
- 	- I experimented with three different ttext extraction libraries, measured their running time and evaluated their results. Pdf2txt has the best results with adjustable speed with an accuracy trade-off. It only runs in Python2, however, therefore I make a call outside the main program.
- 	- Didn't really have many options in tterms of table extraction. I'm using a python wrapper for a java program called tabula. It is the most widely used program for this task.
+ 	- I experimented with three different text extraction libraries, measured their running time and evaluated their results. Pdf2txt has the best results for text extraction with adjustable speed with an accuracy trade-off. It only runs in Python2, however, therefore I make a call outside the main program. PyPDF2, however, can decrypt and read metadata. 
+ 	- Didn't really have many options in terms of table extraction. I'm using a python wrapper for a java program called tabula. It is the most widely used program for this task.
  	- I utilize every CPU core through multiprocessing to speed up the process.
  - Tables can be extracted with a large error rate, but even then values are misaligned, columns might be broken up into two, and generally the structure of the table cannot be preserved. 
- 	- Unfortunately because of all the ambiguity, I only consider clean cases. This results in low recall but high accuracy, which is more important as we can have results from thousands of pdfs.
+ 	- Unfortunately because of all the ambiguity, I can only consider the small percentage of clean cases. This results in low recall but high accuracy, which is more important as we can have results from thousands of pdfs.
  - Text extraction isn't perfect either. Many times spaces are not recognized between words, words are in the wrong location, and generally the algorithms don't know where to put diagrams, labels, text in tables, so they might just mix it into the main text.
- 	- I'm trying to be independent from the context around the information, and mainly look for key words and see their order. Obviously there is a certain error rate.
+ 	- I'm trying to be independent from the context around the information, and mainly look for keywords and see their order. Obviously it comes with a certain error rate.
  - There is almost an infinite number of combinations how one can phrase their asset allocation in sentence. Clauses, percentage values, synonyms, currencies, units(billions, millions) all pose a challenge. 
  	- My algorithm qualifies a number of results and narrows it with each step in it. I'm only concerned about the most common cases, and in situation where ambiguity can be introduced, I simply discard the potential results. 
+
+
+## Authors
+
+* **Gabor Csapo* - *Initial work* - [PurpleBooth](https://github.com/Asset-Class-Extractor)
+
+
+## Acknowledgments
+
+* SocioVestix Labs
+* People who created the libraries I use
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

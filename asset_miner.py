@@ -77,45 +77,47 @@ def main():
 	clean_up('.txt')
 
 def extract(doc_name):
-	print('start')
-	try:
-		doc = Document(doc_name)
-
-		#cleaning output files
-		output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
-		output.close()
-		output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
-		output.close()
-
-		global LOG_FILE
-		global TIMER
-		TIMER = time.time()
-		LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
-		
-		check_title(doc, doc.path)
-		load_doc(doc)
-		#load_doc_dummy(doc)
-		page_filter(doc)
-		
-		candidates = []
-		candidates += text_extract(doc)
-		if (len(candidates) > 0):	
-			best = evaluate(candidates)
-			if (best.count() < 7):
-				pass#candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
-		if (len(candidates) == 0):
-			print('#####No candidates found in', doc.title, file=LOG_FILE)
-			LOG_FILE.close()
+	doc = Document(doc_name)
+	#check if pdf is encrypted
+	if (doc.pdf_reader.isEncrypted):
+		if (doc.pdf_reader.decrypt('') == 0):
+			print('Cannot decrypt file')
 			return
+
+	#opening and cleaning output files
+	output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
+	output.close()
+	output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
+	output.close()
+
+	#global variables for logging purposes
+	global LOG_FILE
+	global TIMER
+	TIMER = time.time()
+	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
+	
+
+	check_title(doc, doc.path)
+	load_doc(doc)
+	page_filter(doc)
+	
+	candidates = []
+	candidates += text_extract(doc)
+	if (len(candidates) > 0):	
 		best = evaluate(candidates)
-		
-		adjust_unit(doc, best)
-		write_csv([best], True)
-		write_csv(candidates, False)
-		print('###Extract done### ', time.time()-TIMER, file=LOG_FILE)
+		if (best.count() < 7):
+			pass#candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
+	if (len(candidates) == 0):
+		print('#####No candidates found in', doc.title, file=LOG_FILE)
 		LOG_FILE.close()
-	except Exception as inst:
-		print('something', inst)
+		return
+	best = evaluate(candidates)
+	
+	adjust_unit(doc, best)
+	write_csv([best], True)
+	write_csv(candidates, False)
+	print('###Extract done### ', time.time()-TIMER, file=LOG_FILE)
+	LOG_FILE.close()
 	
 
 def check_title(doc, file):
@@ -134,48 +136,14 @@ def check_title(doc, file):
 		doc.date = 'UNKOWN'
 	#doc.OFFSET = int(file[7:9])
 
-def load_doc_dummy(doc):
-	print("####LOADING PDF####", file=LOG_FILE)
-	try:
-		doc.pdf_reader.decrypt('')
-	except:
-		pass
-	pages = 3 #doc.pdf_reader.getNumPages()
-	
-	# I load the pages into the document object.
-	for page in range(pages):
-	    doc.page_dict[doc.OFFSET+page] = ''
-	    
-	    #converting to text using python2 script, which output to ./temp
-	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(doc.OFFSET+page)+".txt", "-p", str(doc.OFFSET+page),"-t", "text", doc.path]
-	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	    temp, error = p.communicate()
-	    if error:
-	        print(error.decode("utf-8"), file=LOG_FILE)
-	    
-	    #reading in files to get text from ./temp   
-	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r", encoding='utf-8') as page_output:
-	        for line in page_output:
-	            doc.page_dict[doc.OFFSET+page] += line.strip() + ' '
-	    page_output.close()
-
-	print("Document loaded ", time.time()-TIMER, file=LOG_FILE)
-
 def load_doc(doc):
 	print("####CONVERTING PDF TO TEXT####", file=LOG_FILE)
 	
-	try:
-		doc.pdf_reader.decrypt('')
-	except Exception as inst:
-		print(inst)
-		exit(1)
-
-
-
 	pages = doc.pdf_reader.getNumPages()
 	
 	# I load the pages into the document object.
 	for page in range(pages):
+		print("p",page, " is converting")
 	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''
 	    
@@ -199,9 +167,9 @@ def page_filter(doc):
 	page_nomination = []
 	
 	digit_search = re.compile(re_digits, re.IGNORECASE)
-	class_search = re.compile(r'', re.IGNORECASE)
+	class_search = re.compile(loose_search, re.IGNORECASE)
 	context_search = re.compile(re_headings+'|'+re_context, re.IGNORECASE)
-
+	#we are only interested in pages that more than 3 digits, at least 3 kinds of asset classes and containes equities and fixed income and has a contextual word in it as well
 	for page in doc.page_dict:
 	    digit_match = 3 < len(digit_search.findall(doc.page_dict[page]))
 	    class_match = 2 < len(class_search.findall(doc.page_dict[page]))
@@ -210,19 +178,16 @@ def page_filter(doc):
 	    context_match = bool(context_search.search(doc.page_dict[page]))
 	    if (digit_match and class_match and context_match and eq_search and fx_search):
 	        page_nomination.append(page)
+	
 	#taking subset of original document object
 	doc.page_dict = {k: doc.page_dict[k] for k in page_nomination}
 	print("Pages to look through:", len(doc.page_dict), time.time()-TIMER, file=LOG_FILE)
 
-# To analyze the pages, first I'll try to convert it to a table and then I'll validate the first table column entries (equity, fixed income, and optionally multi asset and alternatives) I'll also try to look for columns indicating years.
+# To analyze the pages, I'll try to convert it to a table and then I'll validate the first table column entries (equity, fixed income, and optionally multi asset and alternatives) I'll also try to look for columns indicating years.
 def table_extract(doc, pages_to_extract):
 	print("####TABLE EXTRACTION####", file=LOG_FILE)
 	results = []
-	try:
-	    page = doc.pdf_reader.getPage(0)
-	except:
-	    doc.pdf_reader.decrypt('')
-	    page = doc.pdf_reader.getPage(0)
+	page = doc.pdf_reader.getPage(0)
 
 	#table extraction sometimes works better if we only feed in a small portion of the page
 	#this app looks at the whole, upper and lower half and the 4 quaters of the page
@@ -242,6 +207,7 @@ def table_extract(doc, pages_to_extract):
 	l = re.compile(re_percent, re.IGNORECASE)
 	
 	for page in pages_to_extract:
+		print(page, 'processing tables')
 	    for idx, area in enumerate(areas):
 	        series = pd.Series(index=HEADER)
 	        series['name'] = doc.title
@@ -295,7 +261,7 @@ def table_extract(doc, pages_to_extract):
 	    print('P',page,' took ', time.time()-TIMER, file=LOG_FILE)
 	return results
 
-# If no tables are found, we continue trying to text mine the expected results. This Python2 script looks for conversational sentences.	
+# Here I'm trying to text mine the expected results. This regex looks for conversational sentences.	And based on the position of numbers and asset classes guesses what number corresponds to which asset class.
 def text_extract(doc):
 	print("####TEXT EXTRACTION####", time.time()-TIMER, file=LOG_FILE)
 	
@@ -314,12 +280,11 @@ def text_extract(doc):
 	    h = re.compile('[A-Z][^\.][\s\S]*?[^A-Z][.?!](?![A-Z][^a-z]|\d)')
 	    matches = h.findall(text)
 	    
-	    #dropping sentences that don't contain any keywords
+	    #sentence is dropped if sentence has less than 2 contextual keywords and either doesn't have digits or asset class names
 	    to_drop = []
 	    j = re.compile(re_classes+'|'+re_context, re.IGNORECASE)
 	    k = re.compile(re_classes, re.IGNORECASE)
 	    
-	    #sentence is dropped if sentence has less than 2 contextual keywords and either doesn't have digits or asset class names
 	    for i in range(len(matches)-1, -1, -1):
 	        matches[i] = matches[i].replace('\n', ' ').replace('\r', '')
 	        length = 0 if bool(j.search(matches[i])) else len(j.findall(matches[i]))
@@ -335,7 +300,7 @@ def text_extract(doc):
 	        tokens = tokenizer.tokenize(matches[0])
 	        tags = regexp_tagger.tag(tokens)
 	        
-			#we only use the sentence if the number of asset classes match up with the number values. Otherwise it's just a mess
+			#we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
 	        pc = nu = cl = 0
 	        for i in tags:
 	            if i[1] == 'PC':
@@ -398,6 +363,8 @@ def text_extract(doc):
 	                if num and cla:
 	                    into_series(series, cla, num)
 	                    num = cla = None
+	        
+	        #putting qualifying results into candidates
 	        if (series.count() > 3):
 	            series['file'] = getcwd()+doc.path+'#page='+str(page)
 	            series['name'] = doc.title
@@ -465,6 +432,7 @@ def into_series(series, type, value, percent = ''):
 	elif (bool(re.search(r"cash management|money market", type, re.IGNORECASE))):
 		series['money market'+percent] = value
 
+#pick the best result from a list of results
 def evaluate(candidates):
 	best = [candidates[0]]
 	for i in candidates:
@@ -478,6 +446,7 @@ def evaluate(candidates):
 	else:
 		return best[0]
 
+#writing list of results into csv file
 def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
 	writer = csv.writer(output, dialect='excel')
@@ -485,8 +454,36 @@ def write_csv(series, best):
 		writer.writerow(i.tolist())
 	output.close()
 
+#deleting every file in ./temp with the specified extension
 def clean_up(ext):
 	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith(ext))]:
 		remove('./temp/'+file)
 
 if __name__ == "__main__": main()
+
+
+
+
+# def load_doc_dummy(doc):
+# 	print("####LOADING PDF####", file=LOG_FILE)
+	
+# 	pages = 3 #doc.pdf_reader.getNumPages()
+	
+# 	# I load the pages into the document object.
+# 	for page in range(pages):
+# 	    doc.page_dict[doc.OFFSET+page] = ''
+	    
+# 	    #converting to text using python2 script, which output to ./temp
+# 	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(doc.OFFSET+page)+".txt", "-p", str(doc.OFFSET+page),"-t", "text", doc.path]
+# 	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+# 	    temp, error = p.communicate()
+# 	    if error:
+# 	        print(error.decode("utf-8"), file=LOG_FILE)
+	    
+# 	    #reading in files to get text from ./temp   
+# 	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r", encoding='utf-8') as page_output:
+# 	        for line in page_output:
+# 	            doc.page_dict[doc.OFFSET+page] += line.strip() + ' '
+# 	    page_output.close()
+
+# 	print("Document loaded ", time.time()-TIMER, file=LOG_FILE)

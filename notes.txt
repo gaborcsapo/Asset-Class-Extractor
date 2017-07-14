@@ -3,22 +3,13 @@ You need to have:
 java8
 python3
 python2
-pdfminer for python2!!
 C compiler (gcc)
 Anaconda
 nltk
-tabula-py (go to ./Libraries/tabula-py and run "sudo python3 setup.py install")
-pdf2txt (similarly to above)
-PyPDF2 (similarly)
-tqdm (similarly)
-
-Notes:	
-On some linux distributions numpy doesn't work properly. If you encounter an issue related to numpy when installing tabula-py, edit setup.py and move numpy from install-required to setup-required.
-
-
-
-
-
+tabula-py (go to ./Libraries/tabula-py and run "sudo python3 setup.py install" NOTE: if error encountered, try editting setup.py by moving numpy from "install-required" to "setup-required")
+pdf2txt (go to ./Libraries/pdf2txt and run "sudo python2 setup.py install" NOTE: it's python2 and not 3)
+PyPDF2 (go to ./Libraries/PyPDF2 and run "sudo python3 setup.py install")
+tqdm (go to ./Libraries/tqdm and run "sudo python3 setup.py install")
 
 
 

@@ -13,7 +13,7 @@ import time
 import sys
 
 #regexs to distinguish dollar values, asset classes and percent values
-re_digits = "[1-9]\d*(?:[ ,\.-]?\d+){0,3}"
+re_digits = "(?<!\d)(?:[1-9]\d*|0)(?:[,\.-]\d+| \d{3}){0,3}(?!\d)"
 re_currency = "(?:USD|US dollars?|dollars?|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6])"
 re_words = "(?:(?:million|thousand|hundred|billion|M|B|T|K|m|bn|tn)(?![a-z]))"
 

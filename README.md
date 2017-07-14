@@ -30,19 +30,19 @@ Once everything is installed, you can run the program using:
 ```
 python3 asset_miner.py 2> /dev/null
 ```
-"2> /dev/null" surpresses all warnings including the ones that can from tabula. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the Warnings.
+2> /dev/null surpresses all warnings. The silent argument doesn't work in tabula.read_pdf() and I found this the best solution to filter out the hundreds of Warnings.
 
-It extracts pdfs placed into the ./docs folder.
+Extracts pdfs placed into the ./docs folder.
 
-results.csv in the main folder containes the final output. The candidates.csv contains possible results that have been discarded in the process.
+Final output in results.csv in the main folder. The candidates.csv contains possible results that have been discarded in the process.
 
-If you go to ./temp, you can read the logging files for each child process after they are run. It contains useful information for debugging.
+Log files are located in ./temp for debugging purposes.
 
 ## How it works
 
 ### Overview
 - takes a pdf and using the library pdf2txt converts each page to text
-- filters useless pages by throwing them away simply if they don't contain digits and asset class names
+- filters useless pages by simply throwing them away if they don't contain digits and asset class names
 - looks for full sentences and using heuristics tries to guess if they contain information about asset allocation. If it finds a good enough result, skips the next step.
 - extracts tables and tries to guess if they contain valueable information
 - picks the best result from all potential ones
@@ -64,7 +64,7 @@ If you go to ./temp, you can read the logging files for each child process after
 
 ## Authors
 
-* **Gabor Csapo* - *Initial work* - [PurpleBooth](https://github.com/Asset-Class-Extractor)
+* *Gabor Csapo* - *Initial work* - [Asset Allocation Extractor](https://github.com/Asset-Class-Extractor)
 
 
 ## Acknowledgments
@@ -145,4 +145,4 @@ in millions
 ($ billions)
 (dollar amounts in billions)
 (in billions)
-sometimes they have different charts with different units...
+sometimes they change units within the chart

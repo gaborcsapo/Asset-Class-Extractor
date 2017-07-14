@@ -100,7 +100,6 @@ def extract(doc_name):
 	TIMER = time.time()
 	LOG_FILE = open('./temp/logging_pid:'+str(getpid())+'.log', 'a', encoding='utf-8')
 	
-
 	check_title(doc, doc.path)
 	load_doc(doc)
 	page_filter(doc)
@@ -112,7 +111,7 @@ def extract(doc_name):
 		if (best.count() < 7):
 			candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 	if (len(candidates) == 0):
-		print('#####No candidates found in', doc.title, file=LOG_FILE)
+		print('#####Done: No candidates found in', doc.title, file=LOG_FILE)
 		LOG_FILE.close()
 		return
 	best = evaluate(candidates)

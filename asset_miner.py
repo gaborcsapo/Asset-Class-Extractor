@@ -79,10 +79,14 @@ def main():
 def extract(doc_name):
 	doc = Document(doc_name)
 	#check if pdf is encrypted
-	if (doc.pdf_reader.isEncrypted):
-		if (doc.pdf_reader.decrypt('') == 0):
-			print('Cannot decrypt file')
-			return
+	try:
+		if (doc.pdf_reader.isEncrypted):
+			if (doc.pdf_reader.decrypt('') == 0):
+				print('Cannot decrypt file, skipping ', doc_name)
+				return
+	except Exception as inst:
+		print("Decryption error, skipping ", doc_name)
+		return
 
 	#opening and cleaning output files
 	output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
@@ -149,11 +153,12 @@ def load_doc(doc):
 	    
 	    #converting to text using python2 script, which output to ./temp
 	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "-p", str(page),"-t", "text", doc.path]
-	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-	    temp, error = p.communicate()
-	    if error:
-	        print(error.decode("utf-8"))#, file=LOG_FILE)
-	    
+	    try:
+	        subprocess.check_output(cmd)
+	    except subprocess.CalledProcessError as e:
+	        print("Text extraction failed in ", doc.title, e.output)
+	        break
+
 	    #reading in files to get text from ./temp   
 	    with open("./temp/out_pid:"+str(getpid())+'_'+str(page)+".txt", "r", encoding='utf-8') as page_output:
 	        for line in page_output:

@@ -3,5 +3,6 @@ __pycache__/
 *.csv
 *.pdf
 *.txt
+*.log
 
 

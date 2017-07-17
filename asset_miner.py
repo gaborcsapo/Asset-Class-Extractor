@@ -14,20 +14,19 @@ import sys
 
 #regexs to distinguish dollar values, asset classes and percent values
 re_digits = "(?<!\d)(?:[1-9]\d*|0)(?:[,\.-]\d+| \d{3}){0,3}(?!\d)"
-re_currency = "(?:USD|US dollars?|dollars?|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6])"
+re_currency = "(?:USD|US dollars?|dollars?|EUR|euro|GBP|pounds|CHF|JPY|CNY|CAD|AUD|DKK|BRL|KRW|SEK|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20AC\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6])"
 re_words = "(?:(?:million|thousand|hundred|billion|M|B|T|K|m|bn|tn)(?![a-z]))"
 
 re_context = '(?:mix|management|assets|investment|managed|invested)?'
 re_headings = '(?:Fund mix|Assets|Group investments|Investment allocation|Fund management|Investment management|assets|sset class|aum)'
-re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash management|money markets?|bonds?|stocks?)'
-loose_search = '(?:(equities|equity|stocks?)|(fixed income|bonds?)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash management|money markets?))'
-strict_search = '(?:(equities|equity)|(fixed income)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash management))'
+re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash|cash management|money markets?|bonds?|stocks?)'
+loose_search = '(?:(equities|equity|stocks?)|(fixed income|bonds?)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash|cash management|money markets?))'
 re_money = re_currency+'?\s?'+re_digits+'\s?'+re_words+'?\s?'+re_currency+'?(?![%\d])'
 re_percent = re_digits+'%'
 
-re_million = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}millions?'+re_currency+'?\)|in '+re_currency+'? ?millions? ?'+re_currency+'?)'
-re_billion = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}billions?'+re_currency+'?\)|in '+re_currency+'? ?billions? ?'+re_currency+'?)'
-re_trillion = '(?:\( ?(?:'+re_currency+' ?|in ){1,2}trillions?'+re_currency+'?\)|in '+re_currency+'? ?trillions? ?'+re_currency+'?)'
+re_million = '(?:(?:'+re_currency+'[a-z ]{0,10}(in )?)?(mill(ions?)?)([a-z ]{0,6}'+re_currency+')?|'+re_currency+'m)'
+re_billion = '(?:(?:'+re_currency+'[a-z ]{0,10}(in )?)?(bn|bill(ions?)?)([a-z ]{0,6}'+re_currency+')?)'
+re_trillion = '(?:(?:'+re_currency+'[a-z ]{0,10}(in )?)?(tn|trill(ions?)?)([a-z ]{0,6}'+re_currency+')?)'
 
 HEADER = ['name', 'date', 'file', 'equity', 'equity%', 'fixed income', 'fixed income%', 'alternative', 'alternative%', 'multi-asset','multi-asset%', 'money market', 'money market%']
 
@@ -215,14 +214,16 @@ def table_extract(doc, pages_to_extract):
 	for page in pages_to_extract:
 	    print(page, 'processing tables')
 	    for idx, area in enumerate(areas):
+	        found = False
 	        series = pd.Series(index=HEADER)
 	        series['name'] = doc.title
 	        series['date'] = doc.date
 	        #if first two didn't yield anything, give up
-	        if (idx == 2 and len(results) == 0):
+	        if (idx == 2 and not found):
 	        	break
 	        try:
 	            table = tabula.read_pdf(doc.path, pages=page, area = area, silent=True)
+	            found = True
 	            p = table.T.reset_index().T
 	            p = p.apply(lambda x: x.astype(str).str.lower())
 	            
@@ -303,7 +304,7 @@ def text_extract(doc):
 		#tokenize matches into the useful tokens and tag them whether they're nubmers or classes blabla
 	    for match in matches:
 	        series = pd.Series(index=HEADER)
-	        tokens = tokenizer.tokenize(matches[0])
+	        tokens = tokenizer.tokenize(match)
 	        tags = regexp_tagger.tag(tokens)
 	        
 			#we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
@@ -315,6 +316,11 @@ def text_extract(doc):
 	                nu += 1
 	            elif i[1] == 'CL':
 	                cl += 1
+	            #if at least 3 classes and number align only take those and skip the rest
+	            if (abs(cl - nu) > 1):
+	                if (cl>2):
+	                    tags = tags[0:ind-1]
+	                break
             #different combinations of pc, num, cla
 	        per = num = cla = None
 	        if (pc == cl == nu):
@@ -417,7 +423,7 @@ def adjust_unit(doc, best):
 			result = float(re.search(re_digits, value).group(0))*number
 			
 			#currency check
-			foreign = re.findall(r"(?:euro )|(?:eur )|(?:gbp)|(?:pounds)|[¢£¤¥֏؋৲৳৻૱௹฿៛\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]", doc.page_dict[page], re.IGNORECASE)
+			foreign = re.findall(r"EUR|euro|GBP|pounds|CHF|JPY|CNY|CAD|AUD|DKK|BRL|KRW|SEK|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20AC\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]", doc.page_dict[page], re.IGNORECASE)
 			usd = re.findall(r"USD|US dollars?|dollars?|\$", doc.page_dict[page], re.IGNORECASE)
 			if (len(foreign) <= len(usd)):
 				best.loc[ind] = result
@@ -435,7 +441,7 @@ def into_series(series, type, value, percent = ''):
 		series['multi-asset'+percent] = value
 	elif (bool(re.search(r"alternatives?", type, re.IGNORECASE))):
 		series['alternative'+percent] = value
-	elif (bool(re.search(r"cash management|money market", type, re.IGNORECASE))):
+	elif (bool(re.search(r"cash|cash management|money market", type, re.IGNORECASE))):
 		series['money market'+percent] = value
 
 #pick the best result from a list of results
@@ -448,7 +454,7 @@ def evaluate(candidates):
 			best.append(i)
 	if (len(best) > 1):
 		#if more with same amount of numbers, let's use the one with the largest numbesr...
-		return best[pd.concat(best, axis=1).loc['equity':].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values().index[0]] 
+		return best[pd.concat(best, axis=1).loc[['equity','fixed income','alternative','multi-asset','money market']].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values(ascending=False).index[0]] 
 	else:
 		return best[0]
 

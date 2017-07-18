@@ -140,7 +140,7 @@ def load_doc(doc):
 	pages = doc.pdf_reader.getNumPages()
 	
 	# I load the pages into the document object.
-	for page in range(pages):
+	for page in [117]:#range(pages):
 	    print("p",page, " is converting")
 	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''
@@ -255,7 +255,9 @@ def table_extract(doc, pages_to_extract):
 	            if (series.count() > 4):
 	                series['file'] = getcwd()+doc.path[1:]+'#page='+str(page)
 	                results.append(series)
-	                print("Results += 1 on p", page, file=LOG_FILE)
+	                print("-------Results += 1 on p", page, file=LOG_FILE)
+	                print(series, file=LOG_FILE)
+	                print("-------", file=LOG_FILE)
 	                #I use 6 here because in the meantime file loc was addaed too
 	                if (series.count() > 6):
 	                    break            
@@ -304,7 +306,7 @@ def text_extract(doc):
 	        series = pd.Series(index=HEADER)
 	        tokens = tokenizer.tokenize(match)
 	        tags = regexp_tagger.tag(tokens)
-	        
+	        print(tags)
 			#we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
 	        pc = nu = cl = 0
 	        for ind, i in enumerate(tags):

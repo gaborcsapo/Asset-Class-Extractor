@@ -140,7 +140,7 @@ def load_doc(doc):
 	pages = doc.pdf_reader.getNumPages()
 	
 	# I load the pages into the document object.
-	for page in [117]:#range(pages):
+	for page in range(pages):
 	    print("p",page, " is converting")
 	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''

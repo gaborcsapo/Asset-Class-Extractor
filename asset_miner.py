@@ -306,8 +306,8 @@ def text_extract(doc):
 	        series = pd.Series(index=HEADER)
 	        tokens = tokenizer.tokenize(match)
 	        tags = regexp_tagger.tag(tokens)
-	        print(tags)
-			#we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
+	        
+	        #we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
 	        pc = nu = cl = 0
 	        for ind, i in enumerate(tags):
 	            if i[1] == 'PC':

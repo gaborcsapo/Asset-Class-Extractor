@@ -40,6 +40,7 @@ class Document:
 		self.pdf_reader = PdfFileReader(open(self.path, "rb"), strict=False)
 		self.page_dict = {}
 
+
 def main():
 	files_pdf = [f for f in listdir('./docs') if (isfile(join('./docs', f)) and f.endswith('.pdf'))]
 	clean_up('.log')
@@ -54,26 +55,18 @@ def main():
 	pool.join()
 	
 	#getting the result of the subprocesses and writing them in one file
-	candidates_out = open('candidates.csv', 'w', encoding='utf-8')
-	writer = csv.writer(candidates_out, dialect='excel')
-	writer.writerow(HEADER)
-	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith('candidates'))]:
-		with open('./temp/'+file, 'r', encoding='utf-8') as f:
-			for line in f:
-				candidates_out.write(line)
-	
-	results_out = open('results.csv', 'w', encoding='utf-8')
-	writer = csv.writer(results_out, dialect='excel')
-	writer.writerow(HEADER)
-	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith('results'))]:
-		with open('./temp/'+file, 'r', encoding='utf-8') as f:
-			for line in f:
-				results_out.write(line)
+	for current in ['results','candidates']:
+		with open(current+'.csv', 'w', encoding='utf-8') as file_out:
+		writer = csv.writer(file_out, dialect='excel')
+		writer.writerow(HEADER)
+		for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith(current))]:
+			with open('./temp/'+file, 'r', encoding='utf-8') as f:
+				for line in f:
+					file_out.write(line)
 
-	results_out.close()
-	candidates_out.close()
 	clean_up('.csv')
 	clean_up('.txt')
+
 
 def extract(doc_name):
 	doc = Document(doc_name)
@@ -140,6 +133,7 @@ def check_title(doc, file):
 		doc.date = 'UNKOWN'
 	#doc.OFFSET = int(file[7:9])
 
+
 def load_doc(doc):
 	print("####CONVERTING PDF TO TEXT####", file=LOG_FILE)
 	
@@ -167,6 +161,7 @@ def load_doc(doc):
 
 	print("Document loaded", time.time()-TIMER, file=LOG_FILE)
 
+
 # Once loaded, the document has to go through a basic page scoring step. If the page doesn't contain Asset/Investment allocation or the two words equity and fixed income, then the page is thrown away.
 def page_filter(doc):
 	page_nomination = []
@@ -187,6 +182,7 @@ def page_filter(doc):
 	#taking subset of original document object
 	doc.page_dict = {k: doc.page_dict[k] for k in page_nomination}
 	print("Pages to look through:", len(doc.page_dict), time.time()-TIMER, file=LOG_FILE)
+
 
 # To analyze the pages, I'll try to convert it to a table and then I'll validate the first table column entries (equity, fixed income, and optionally multi asset and alternatives) I'll also try to look for columns indicating years.
 def table_extract(doc, pages_to_extract):
@@ -267,6 +263,7 @@ def table_extract(doc, pages_to_extract):
 	            print("Unsuccessful table search: page", page, inst, file=LOG_FILE)
 	    print('P',page,' took ', time.time()-TIMER, file=LOG_FILE)
 	return results
+
 
 # Here I'm trying to text mine the expected results. This regex looks for conversational sentences.	And based on the position of numbers and asset classes guesses what number corresponds to which asset class.
 def text_extract(doc):
@@ -388,6 +385,7 @@ def text_extract(doc):
 	print('Done with text. ', time.time()-TIMER, file=LOG_FILE)
 	return results
 
+
 def adjust_unit(doc, best):
 	match = re.search('page=(\d+)', best['file'])
 	page = int(match.group(1)) if match else 0
@@ -444,6 +442,7 @@ def into_series(series, type, value, percent = ''):
 	elif (bool(re.search(r"cash|cash management|money market", type, re.IGNORECASE))):
 		series['money market'+percent] = value
 
+
 #pick the best result from a list of results
 def evaluate(candidates):
 	best = [candidates[0]]
@@ -458,6 +457,7 @@ def evaluate(candidates):
 	else:
 		return best[0]
 
+
 #writing list of results into csv file
 def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
@@ -466,12 +466,16 @@ def write_csv(series, best):
 		writer.writerow(i.tolist())
 	output.close()
 
+
 #deleting every file in ./temp with the specified extension
 def clean_up(ext):
 	for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith(ext))]:
 		remove('./temp/'+file)
 
-if __name__ == "__main__": main()
+
+
+if __name__ == "__main__": 
+	main()
 
 
 

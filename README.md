@@ -12,9 +12,9 @@ Once prerequisites are installed, it's ready to go.
 
 ### Prerequisites
 
-- java8
-- python3
-- python2
+- java 8
+- python 3
+- python 2
 - C compiler (gcc)
 - Anaconda
 - nltk
@@ -44,12 +44,12 @@ Log files are located in ./temp for debugging purposes.
 - takes a pdf and using the library pdf2txt converts each page to text
 - filters useless pages by simply throwing them away if they don't contain digits and asset class names
 - looks for full sentences and using heuristics tries to guess if they contain information about asset allocation. If it finds a good enough result, skips the next step.
-- extracts tables and tries to guess if they contain valueable information
+- extracts tables using tabula-py and tries to guess if they contain valueable information
 - picks the best result from all potential ones
-- converts it to numbers (i.e. 1 billion -> 10000000000)
+- converts it to numbers (i.e. 1 billion -> 10000000000) taking currencies into account
 - repeats the same for every pdf in ./docs and combines the results in a single file
 
-### Challenges and my response
+### Some of the challenges and my response
  - Text extraction from PDFs is a notoriously difficult task admitted by many scholars. Table extraction is, however, on another level of complexity because of the unstructured nature of pdfs.
  	- I experimented with three different text extraction libraries, measured their running time and evaluated their results. Pdf2txt has the best results for text extraction with adjustable speed with an accuracy trade-off. It only runs in Python2, however, therefore I make a call outside the main program. PyPDF2, however, can decrypt (not all algorithms, though) and read metadata. 
  	- Didn't really have many options in terms of table extraction. I'm using a python wrapper for a java program called tabula. It is the most widely used program for this task.

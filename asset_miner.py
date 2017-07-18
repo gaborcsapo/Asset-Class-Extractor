@@ -298,6 +298,7 @@ def text_extract(doc):
 	    for i in to_drop:
 	        matches.pop(i)
 	    
+
 		#tokenize matches into the useful tokens and tag them whether they're nubmers or classes blabla
 	    for match in matches:
 	        series = pd.Series(index=HEADER)
@@ -306,17 +307,18 @@ def text_extract(doc):
 	        
 			#we only use the sentence if the number of asset classes match up with the number values. Otherwise the sentences area just a mess
 	        pc = nu = cl = 0
-	        for i in tags:
+	        for ind, i in enumerate(tags):
 	            if i[1] == 'PC':
 	                pc += 1
 	            elif i[1] == 'NU':
 	                nu += 1
 	            elif i[1] == 'CL':
 	                cl += 1
-	            #if at least 3 classes and number align only take those and skip the rest
+	            #if at least 3 classes and numbers align only take those and skip the rest
 	            if (abs(cl - nu) > 1):
 	                if (cl>2):
 	                    tags = tags[0:ind-1]
+	                    nu = cl
 	                break
             #different combinations of pc, num, cla
 	        per = num = cla = None

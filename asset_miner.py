@@ -57,12 +57,12 @@ def main():
 	#getting the result of the subprocesses and writing them in one file
 	for current in ['results','candidates']:
 		with open(current+'.csv', 'w', encoding='utf-8') as file_out:
-		writer = csv.writer(file_out, dialect='excel')
-		writer.writerow(HEADER)
-		for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith(current))]:
-			with open('./temp/'+file, 'r', encoding='utf-8') as f:
-				for line in f:
-					file_out.write(line)
+			writer = csv.writer(file_out, dialect='excel')
+			writer.writerow(HEADER)
+			for file in [f for f in listdir('./temp') if (isfile(join('./temp', f)) and f.endswith('.csv') and f.startswith(current))]:
+				with open('./temp/'+file, 'r', encoding='utf-8') as f:
+					for line in f:
+						file_out.write(line)
 
 	clean_up('.csv')
 	clean_up('.txt')

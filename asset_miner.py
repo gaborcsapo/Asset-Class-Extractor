@@ -456,8 +456,12 @@ def evaluate(candidates):
 		elif(i.count() == best[0].count()):
 			best.append(i)
 	if (len(best) > 1):
-		#if more with same amount of numbers, let's use the one with the largest numbesr...
-		return best[pd.concat(best, axis=1).loc[['equity','fixed income','alternative','multi-asset','money market']].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values(ascending=False).index[0]] 
+		try:
+			#if more with same amount of numbers, let's use the one with the largest numbesr...
+			return best[pd.concat(best, axis=1).loc[['equity','fixed income','alternative','multi-asset','money market']].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values(ascending=False).index[0]] 
+		except Exception as ex:
+			print("########ERRRRRRRORRRRRRRRRR", ex, file=LOG_FILE)
+			return best[0]
 	else:
 		return best[0]
 

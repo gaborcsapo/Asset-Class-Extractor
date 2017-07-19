@@ -33,7 +33,7 @@ HEADER = ['name', 'date', 'file', 'equity', 'equity%', 'fixed income', 'fixed in
 
 class Document:
 	def __init__(self, file):
-		self.path = "./docs/" + file
+		self.path = "./data/pdf_data/Asset managers/Annual reports/" + file
 		self.title = None
 		self.date = None
 		self.OFFSET = 0
@@ -42,7 +42,7 @@ class Document:
 
 
 def main():
-	files_pdf = [f for f in listdir('./docs') if (isfile(join('./docs', f)) and f.endswith('.pdf'))]
+	files_pdf = [f for f in listdir('./data/pdf_data/Asset managers/Annual reports') if (isfile(join('./data/pdf_data/Asset managers/Annual reports', f)) and f.endswith('.pdf'))]
 	clean_up('.log')
 	clean_up('.csv')
 	clean_up('.txt')

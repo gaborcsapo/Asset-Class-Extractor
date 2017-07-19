@@ -417,9 +417,9 @@ def adjust_unit(doc, best):
 			elif(most_freq_unit == 2):
 				number *= 1000000
 			#last resort is guessing based on the size of the number
-			elif (1000 > float(re.sub(r"[^\d.,]", "", value)) > 1):
+			elif (1000 > float(re.sub(r"[^\d.]", "", value)) > 1):
 				number *= 1000000000
-			elif (1000 < float(re.sub(r"[^\d.,]", "", value))):
+			elif (1000 < float(re.sub(r"[^\d.]", "", value))):
 				number *= 1000000
 			
 			result = float(re.search(re_digits, value).group(0))*number
@@ -458,7 +458,7 @@ def evaluate(candidates):
 	if (len(best) > 1):
 		try:
 			#if more with same amount of numbers, let's use the one with the largest numbesr...
-			return best[pd.concat(best, axis=1).loc[['equity','fixed income','alternative','multi-asset','money market']].replace('[^\d.,]', '', regex=True).astype(float).sum().sort_values(ascending=False).index[0]] 
+			return best[pd.concat(best, axis=1).loc[['equity','fixed income','alternative','multi-asset','money market']].replace('[^\d.]', '', regex=True).astype(float).sum().sort_values(ascending=False).index[0]] 
 		except Exception as ex:
 			print("########ERRRRRRRORRRRRRRRRR", ex, file=LOG_FILE)
 			return best[0]

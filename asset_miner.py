@@ -49,7 +49,7 @@ def main():
 
 	#multi processing. Breking the list of files and feeeding them to a bunch of processes
 	pool = Pool()
-	for _ in tqdm(pool.imap_unordered(extract, files_pdf[0:50]), total=len(files_pdf[0:50]), file=sys.stdout):
+	for _ in tqdm(pool.imap_unordered(extract, files_pdf[50:100]), total=len(files_pdf[50:100]), file=sys.stdout):
 		pass
 	pool.close() 
 	pool.join()

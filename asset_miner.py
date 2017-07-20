@@ -422,7 +422,7 @@ def adjust_unit(doc, best):
 			elif (1000 < float(re.sub(r"[^\d.]", "", value))):
 				number *= 1000000
 			
-			result = float(re.search(re_digits, value).group(0))*number
+			result = float(re.sub(r"[^\d.]", "", re.search(re_digits, value).group(0)))*number
 			
 			#currency check
 			foreign = re.findall(r"EUR|euro|GBP|pounds|CHF|JPY|CNY|CAD|AUD|DKK|BRL|KRW|SEK|[$¢£¤¥֏؋৲৳৻૱௹฿៛\u20AC\u20a0-\u20bd\ua838\ufdfc\ufe69\uff04\uffe0\uffe1\uffe5\uffe6]", doc.page_dict[page], re.IGNORECASE)

@@ -141,8 +141,6 @@ def load_doc(doc):
 	
 	# I load the pages into the document object.
 	for page in range(pages):
-	    print("p",page, " is converting")
-	    print("p",page, " is converting", file=LOG_FILE)
 	    doc.page_dict[page] = ''
 	    
 	    #converting to text using python2 script, which output to ./temp
@@ -219,6 +217,7 @@ def table_extract(doc, pages_to_extract):
 	        	break
 	        try:
 	            table = tabula.read_pdf(doc.path, pages=page, area = area, silent=True)
+	            print(table, file=LOG_FILE)
 	            found = True
 	            p = table.T.reset_index().T
 	            p = p.apply(lambda x: x.astype(str).str.lower())
@@ -257,6 +256,8 @@ def table_extract(doc, pages_to_extract):
 	                results.append(series)
 	                print("-------Results += 1 on p", page, file=LOG_FILE)
 	                print(series, file=LOG_FILE)
+	                print("-------", file=LOG_FILE)
+	                print(table, file=LOG_FILE)
 	                print("-------", file=LOG_FILE)
 	                #I use 6 here because in the meantime file loc was addaed too
 	                if (series.count() > 6):
@@ -383,7 +384,15 @@ def text_extract(doc):
 	            series['name'] = doc.title
 	            series['date'] = doc.date
 	            results.append(series)
-	            print("Results +=1 on p", page, file=LOG_FILE)
+	            print("-------Results += 1 on p", page, file=LOG_FILE)
+	            print(match, file=LOG_FILE)
+	            print("-------", file=LOG_FILE)
+	            print(series, file=LOG_FILE)
+	            print("-------", file=LOG_FILE)
+	            print(tokens, file=LOG_FILE)
+	            print("-------", file=LOG_FILE)
+	            print(tags, file=LOG_FILE)
+	            print("-------", file=LOG_FILE)
 	            if (series.count() > 5):
 	            	break                      
 	print('Done with text. ', time.time()-TIMER, file=LOG_FILE)

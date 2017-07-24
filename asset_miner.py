@@ -19,8 +19,8 @@ re_words = "(?:(?:million|thousand|hundred|billion|M|B|T|K|m|bn|tn)(?![a-z]))"
 
 re_context = '(?:mix|management|assets|investment|managed|invested)?'
 re_headings = '(?:Fund mix|Assets|Group investments|Investment allocation|Fund management|Investment management|assets|sset class|aum)'
-re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash|cash management|money markets?|bonds?|stocks?)'
-loose_search = '(?:(equities|equity|stocks?)|(fixed income|bonds?)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash|cash management|money markets?))'
+re_classes = '(?:equities|equity|fixed income|alternatives?|multi[ -]assets?|hybrid|cash|cash management|money markets?|bonds?|stocks?|liquidity)'
+loose_search = '(?:(equities|equity|stocks?)|(fixed income|bonds?)|(alternatives?)|(multi[ -]assets?|hybrid)|(cash|cash management|money markets?|liquidity))'
 re_money = re_currency+'?\s?'+re_digits+'\s?'+re_words+'?\s?'+re_currency+'?(?![%\d])'
 re_percent = re_digits+'%'
 
@@ -64,7 +64,7 @@ def main():
 					for line in f:
 						file_out.write(line)
 
-	clean_up('.csv')
+	#clean_up('.csv')
 	clean_up('.txt')
 
 

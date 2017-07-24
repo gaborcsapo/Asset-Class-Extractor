@@ -80,12 +80,6 @@ def extract(doc_name):
 		print("Decryption error, skipping ", doc_name)
 		return
 
-	#opening and cleaning output files
-	output = open('./temp/results'+str(getpid())+'.csv', 'w', encoding='utf-8')
-	output.close()
-	output = open('./temp/candidates'+str(getpid())+'.csv', 'w', encoding='utf-8')
-	output.close()
-
 	#global variables for logging purposes
 	global LOG_FILE
 	global TIMER

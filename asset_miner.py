@@ -106,14 +106,14 @@ def extract(doc_name):
 	else:
 		candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 
-	print('#####candidates\n', candidates, file=LOG_FILE)	
+	print('#####candidates before eval\n', candidates, file=LOG_FILE)	
 
 	if (len(candidates) == 0):
 		print('#####Done: No candidates found in', doc.title, file=LOG_FILE)
 		LOG_FILE.close()
 		return
 	best = evaluate(candidates)
-	
+	print('#####candidates after eval\n', candidates, file=LOG_FILE)
 	adjust_unit(doc, best)
 	write_csv([best], True)
 	write_csv(candidates, False)
@@ -484,6 +484,7 @@ def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
 	writer = csv.writer(output, dialect='excel')
 	for i in series:
+		print('####writing csv\n', i.tolist())
 		writer.writerow(i.tolist())
 	output.close()
 

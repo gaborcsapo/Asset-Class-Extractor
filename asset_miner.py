@@ -268,7 +268,7 @@ def table_extract(doc, pages_to_extract):
 	                    break            
 	        except Exception as inst:
 	            print("Unsuccessful table search: page", page, inst, file=LOG_FILE)
-	    print('P',page,' took ', time.time()-TIMER, file=LOG_FILE)
+	    print('P',page,' took ', time.time()-TIMER, 'with ', len(results), 'results', file=LOG_FILE)
 	return results
 
 
@@ -399,7 +399,7 @@ def text_extract(doc):
 	            print("-------", file=LOG_FILE)
 	            if (series.count() > 5):
 	            	break                      
-	print('Done with text. ', time.time()-TIMER, file=LOG_FILE)
+	print('Done with text. ', time.time()-TIMER, 'with ', len(results), 'results', file=LOG_FILE)
 	return results
 
 

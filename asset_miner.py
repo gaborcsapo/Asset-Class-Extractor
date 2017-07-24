@@ -101,8 +101,12 @@ def extract(doc_name):
 	if (len(candidates) > 0):	
 		if (evaluate(candidates).count() > 6):
 			pass 
+		else:
+			candidates += table_extract(doc, doc.page_dict)
 	else:
 		candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
+
+	print('#####candidates\n', candidates, file=LOG_FILE)	
 
 	if (len(candidates) == 0):
 		print('#####Done: No candidates found in', doc.title, file=LOG_FILE)

@@ -484,7 +484,7 @@ def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
 	writer = csv.writer(output, dialect='excel')
 	for i in series:
-		print('####writing csv\n', i.tolist())
+		print('####writing csv\n', i.tolist(), file=LOG_FILE)
 		writer.writerow(i.tolist())
 	output.close()
 

@@ -49,7 +49,7 @@ def main():
 
 	#multi processing. Breking the list of files and feeeding them to a bunch of processes
 	pool = Pool()
-	for _ in tqdm(pool.imap_unordered(extract, files_pdf[50:100]), total=len(files_pdf[50:100]), file=sys.stdout):
+	for _ in tqdm(pool.imap_unordered(extract, files_pdf), total=len(files_pdf), file=sys.stdout):
 		pass
 	pool.close() 
 	pool.join()
@@ -100,14 +100,12 @@ def extract(doc_name):
 	else:
 		candidates += table_extract(doc, doc.page_dict) #table_extract(doc, [doc.OFFSET]) #
 
-	print('#####candidates before eval\n', candidates, file=LOG_FILE)	
-
 	if (len(candidates) == 0):
 		print('#####Done: No candidates found in', doc.title, file=LOG_FILE)
 		LOG_FILE.close()
 		return
 	best = evaluate(candidates)
-	print('#####candidates after eval\n', candidates, file=LOG_FILE)
+	
 	adjust_unit(doc, best)
 	write_csv([best], True)
 	write_csv(candidates, False)
@@ -478,7 +476,6 @@ def write_csv(series, best):
 	output = open('./temp/results'+str(getpid())+'.csv', 'a', encoding='utf-8') if best else open('./temp/candidates'+str(getpid())+'.csv', 'a', encoding='utf-8')
 	writer = csv.writer(output, dialect='excel')
 	for i in series:
-		print('####writing csv\n', i.tolist(), file=LOG_FILE)
 		writer.writerow(i.tolist())
 	output.close()
 

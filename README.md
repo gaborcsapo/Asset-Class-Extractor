@@ -50,19 +50,6 @@ Log files are located in ./temp for debugging purposes.
 - repeats the same for every pdf in ./docs and combines the results in a single file
 
 ### Some of the challenges and my response
- - Text extraction from PDFs is a notoriously difficult task admitted by many scholars. Table extraction is, however, on another level of complexity because of the unstructured nature of pdfs.
- 	- I experimented with three different text extraction libraries, measured their running time and evaluated their results. Pdf2txt has the best results for text extraction with adjustable speed with an accuracy trade-off. It only runs in Python2, however, therefore I make a call outside the main program. PyPDF2, however, can decrypt (not all algorithms, though) and read metadata. 
- 	- Didn't really have many options in terms of table extraction. I'm using a python wrapper for a java program called tabula. It is the most widely used program for this task.
- 	- I utilize every CPU core through multiprocessing to speed up the process.
- - Tables can be extracted with a large error rate, but even then values are misaligned, columns might be broken up into two, and generally the structure of the table cannot be preserved. 
- 	- Unfortunately because of all the ambiguity, I can only consider the small percentage of clean cases. This results in low recall but high accuracy, which is more important as we can have results from thousands of pdfs.
- - Text extraction isn't perfect either. Many times spaces are not recognized between words, words are in the wrong location, and generally the algorithms don't know where to put diagrams, labels, text in tables, so they might just mix it into the main text.
- 	- I'm trying to be independent from the context around the information, and mainly look for keywords and see their order. Obviously it comes with a certain error rate.
- - There is almost an infinite number of combinations how one can phrase their asset allocation in sentence. Clauses, percentage values, synonyms, currencies, units(billions, millions) all pose a challenge. 
- 	- My algorithm qualifies a number of results and narrows it with each step in it. I'm only concerned about the most common cases, and in situation where ambiguity can be introduced, I simply discard the potential results. 
-
- It is a Unique Problem with Unique challenges, which make it unfit for out-of-the-box solutions.
-
 - The very first problem is the data format, PDF.
 	- PDF were meant to create documents that look the same across devices, which created a very open format. It looks the same to human readers, but is a nightmare for computers to understand. The PDF file is really a form of Vector graphic – it contains a whole load of commands to draw shapes, images and text. So long as the end result looks correct that is the key requirement. Often the text will be in the correct order but there is no guarantee. Nothing in PDF specification enforces any standardization. Complex structures such as tables exist because your brain perceives them on the finished document – there is nothing describing them in the PDF beyond a set of draw line commands at certain locations.
 

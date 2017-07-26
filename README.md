@@ -61,6 +61,27 @@ Log files are located in ./temp for debugging purposes.
  - There is almost an infinite number of combinations how one can phrase their asset allocation in sentence. Clauses, percentage values, synonyms, currencies, units(billions, millions) all pose a challenge. 
  	- My algorithm qualifies a number of results and narrows it with each step in it. I'm only concerned about the most common cases, and in situation where ambiguity can be introduced, I simply discard the potential results. 
 
+ It is a Unique Problem with Unique challenges, which make it unfit for out-of-the-box solutions.
+
+- The very first problem is the data format, PDF.
+	- PDF were meant to create documents that look the same across devices, which created a very open format. It looks the same to human readers, but is a nightmare for computers to understand. The PDF file is really a form of Vector graphic – it contains a whole load of commands to draw shapes, images and text. So long as the end result looks correct that is the key requirement. Often the text will be in the correct order but there is no guarantee. Nothing in PDF specification enforces any standardization. Complex structures such as tables exist because your brain perceives them on the finished document – there is nothing describing them in the PDF beyond a set of draw line commands at certain locations.
+
+	- There are libraries that cluster words and guess the sentence structure with fairly good accuracy in clean cases, but when several unaligned columns of text are on the page, they can get confused. 
+	- Table extraction is another level of difficulty. Tables can be made up of pipes separating spaces where the text is placed later. The Tabula open-source project is tackling the problem, but with rather mixed results. Can’t really guess the column structure. It is based on Machine learning, OCR, CV, clustering.
+
+Building a perfect solution already failed.
+
+- Let’s say we extracted the text and table, now we have to understand the data.
+	- Extracting numbers from sentences what they are describing are a challenging, but solvable NLP problem. You can either use hundreds of manual rules for all the cases, or experiment with machine learning, once we collected a large training set.
+	- Table extraction is a harder one, however. The output of table recognition libraries is completely unreliable, values are misaligned, columns might be broken up into two, and generally the structure of the table cannot be preserved. So I would only consider working with the cleaner cases and discard the rest.
+
+- After solving these problems, we need to find the units. It is a crucial part, as it not negligible if we accidentally report 200 million or billion. In text, it’s usually more straightforward. In tables, while they usually explain in parentheses, from a computer perspective it is very difficult to find where they put those, but again with many manual rules and clustering we can get some good results (given that tables are extracted correctly)
+
+- So far these problems can be overcome if you have a development team and give them 5 months, and in the end you’ll be able to extract the numbers from the PDFs, but you still won’t know what the numbers mean because the context matters immensely:
+There are just things computers can’t do and one is understanding human language and how we build context around words. This is really where errors are introduced. (*questions on slide 8*)
+
+More on: https://docs.google.com/a/sociovestix.com/presentation/d/1mKRFsQ53g06lY9MrQ6YKaJdt2BRJ2-K6qE0FfImqXM4/edit?usp=sharing
+
 
 ## Authors
 

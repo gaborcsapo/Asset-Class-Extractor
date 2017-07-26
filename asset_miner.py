@@ -202,7 +202,6 @@ def table_extract(doc, pages_to_extract):
 	l = re.compile(re_percent, re.IGNORECASE)
 	
 	for page in pages_to_extract:
-	    print(page, 'processing tables')
 	    for idx, area in enumerate(areas):
 	        found = False
 	        series = pd.Series(index=HEADER)
@@ -448,7 +447,7 @@ def into_series(series, type, value, percent = ''):
 		series['multi-asset'+percent] = value
 	elif (bool(re.search(r"alternatives?", type, re.IGNORECASE))):
 		series['alternative'+percent] = value
-	elif (bool(re.search(r"cash|cash management|money market", type, re.IGNORECASE))):
+	elif (bool(re.search(r"cash|cash management|money market|liquidity", type, re.IGNORECASE))):
 		series['money market'+percent] = value
 
 
@@ -489,30 +488,3 @@ def clean_up(ext):
 
 if __name__ == "__main__": 
 	main()
-
-
-
-
-# def load_doc_dummy(doc):
-# 	print("####LOADING PDF####", file=LOG_FILE)
-	
-# 	pages = 3 #doc.pdf_reader.getNumPages()
-	
-# 	# I load the pages into the document object.
-# 	for page in range(pages):
-# 	    doc.page_dict[doc.OFFSET+page] = ''
-	    
-# 	    #converting to text using python2 script, which output to ./temp
-# 	    cmd = ["python2", "./Libraries/pdf2txt/tools/pdf2txt.py", "-o", "./temp/output"+str(doc.OFFSET+page)+".txt", "-p", str(doc.OFFSET+page),"-t", "text", doc.path]
-# 	    p = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-# 	    temp, error = p.communicate()
-# 	    if error:
-# 	        print(error.decode("utf-8"), file=LOG_FILE)
-	    
-# 	    #reading in files to get text from ./temp   
-# 	    with open("./temp/output"+str(doc.OFFSET+page)+".txt", "r", encoding='utf-8') as page_output:
-# 	        for line in page_output:
-# 	            doc.page_dict[doc.OFFSET+page] += line.strip() + ' '
-# 	    page_output.close()
-
-# 	print("Document loaded ", time.time()-TIMER, file=LOG_FILE)

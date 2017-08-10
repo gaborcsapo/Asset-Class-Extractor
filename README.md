@@ -7,6 +7,8 @@ Asset managers invest their assets in a range of products (equities, fixed incom
 ### Installing
 ```
 git clone https://github.com/gaborcsapo/Asset-Class-Extractor.git
+cd Asset-Class-Extractor
+pip install -r requirements.txt
 ```
 Once prerequisites are installed, it's ready to go.
 
@@ -16,13 +18,8 @@ Once prerequisites are installed, it's ready to go.
 - python 3
 - python 2
 - C compiler (gcc)
-- Anaconda
-- nltk
-- tabula-py (go to ./Libraries/tabula-py and run "sudo python3 setup.py install" NOTE: if error encountered, try editting setup.py by moving numpy from "install-required" to "setup-required")
-- pdf2txt (go to ./Libraries/pdf2txt and run "sudo python2 setup.py install" NOTE: it's python2 and not 3)
-- PyPDF2 (go to ./Libraries/PyPDF2 and run "sudo python3 setup.py install")
-- tqdm (go to ./Libraries/tqdm and run "sudo python3 setup.py install")
 
+- Note: if tabula-py doesn't install because of an error with numpy, clone the library from github, try editting setup.py by moving numpy from "install-required" to "setup-required" and run "python3 setup.py install"
 
 ## Running the program
 
